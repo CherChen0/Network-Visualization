@@ -1,0 +1,136 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>明星关系图</title>
+    <script type="text/javascript" src="{{ url_for('static', filename='jquery-3.2.1.min.js') }}"></script>
+</head>
+
+<body>
+    <!--Step:1 为ECharts准备一个具备大小（宽高）的Dom-->
+    <div id="main" style="height:600px;border:1px solid #ccc;padding:10px;"></div>
+    
+    <!--Step:2 引入echarts.js-->
+    <!--<script src="js/echarts.js"></script>-->
+    <script src="{{ url_for('static', filename='echarts.js') }}"></script>
+    
+    <script type="text/javascript">
+    // Step:3 为模块加载器配置echarts的路径，从当前页面链接到echarts.js，定义所需图表路径
+
+
+        var myChart = echarts.init(document.getElementById('main')); 
+        option = {
+            title: { text: '明星关系图谱' },
+            tooltip: {
+                formatter: function (x) {
+                    return x.data.url;   //鼠标放在节点上的显示
+                }
+            },
+			<!--RefreshTime  刷新时间的的限制配置-->
+            //<add key="RefreshTime" value="2,5,7,10,20,30,40,100,200,500" />
+			
+            series: [
+                {
+                    type: 'graph',
+                    layout: 'force',
+                    symbolSize: 50,
+					focusNodeAdjacency: true,
+                    roam: true,
+                    edgeSymbol: ['circle', 'arrow'],
+                    edgeSymbolSize: [4, 10],
+                    edgeLabel: {
+                        normal: {
+                            textStyle: {
+                                fontSize: 20
+                            }
+                        }
+                    },
+                    force: {
+                        repulsion: 500,  //调整初始node间的距离
+                        edgeLength: [10, 50]
+                    },
+                    draggable: true,
+                    itemStyle: {
+                        normal: {
+                            color: '#4b565b'
+                        }
+                    },
+                    lineStyle: {
+                        normal: {
+                            width: 2,
+                            color: '#4b565b'
+
+                        }
+                    },
+                    edgeLabel: {
+                        normal: {
+                            show: true,
+                            formatter: function (x) {
+                                return x.data.name;
+                            }
+                        }
+                    },
+                    label: {
+                        normal: {
+                            show: true,
+                            textStyle: {
+                            }
+                        }
+                    },
+                    data: [],
+					links: []
+                }
+            ]
+        };
+        myChart.setOption(option);
+ 
+            $.ajax({
+                cache: false,
+                type: "GET",
+				//type: "POST",
+                url: "/nodes", //把表单数据发送到/weather
+                data: null, // 发送的数据
+                dataType : "json",  //返回数据形式为json
+                async: false,
+                error: function(request) {
+                    alert("发送请求失败！");
+                },
+                success: function(result) {
+			    
+
+				    var datas = [];
+                    for (var i = 0; i < result.name.length; i++) {
+                            datas[i] = {
+                            name: result.name[i],
+							url: result.url[i]
+                            };
+                    }
+					var linking = [];
+                    for (var i = 0; i < result.node1.length; i++) {
+                            linking[i] = {
+                            source: result.node1[i],
+                            target: result.node2[i],
+                            name: result.relation[i],
+                            };
+                    }
+                    //console.log(result);
+
+					myChart.setOption({
+					
+                    series: [
+                    {
+					data: datas,
+					links:linking
+						
+					}]
+						
+				    });
+
+                    
+                    // 为echarts对象加载数据-------------- 
+                }
+            });
+	    
+    </script> 
+</body>
+</html>

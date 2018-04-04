@@ -1,0 +1,194 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>明星关系图</title>
+    <script type="text/javascript" src="{{ url_for('static', filename='jquery-3.2.1.min.js') }}"></script>
+</head>
+
+<body>
+    <!--Step:1 为ECharts准备一个具备大小（宽高）的Dom-->
+    <div id="main" style="height:500px;border:1px solid #ccc;padding:10px;"></div>
+    
+    <!--Step:2 引入echarts.js-->
+    <!--<script src="js/echarts.js"></script>-->
+    <script src="{{ url_for('static', filename='echarts.js') }}"></script>
+    
+    <script type="text/javascript">
+    // Step:3 为模块加载器配置echarts的路径，从当前页面链接到echarts.js，定义所需图表路径
+
+
+        var myChart = echarts.init(document.getElementById('main')); 
+        option = {
+            title: { text: '明星关系图谱' },
+            tooltip: {
+                formatter: function (x) {
+                    return x.data.url;   //鼠标放在节点上的显示
+                }
+            },
+			<!--RefreshTime  刷新时间的的限制配置-->
+            //<add key="RefreshTime" value="2,5,7,10,20,30,40,100,200,500" />
+			
+            series: [
+                {
+                    type: 'graph',
+                    layout: 'force',
+                    symbolSize: 50,
+					focusNodeAdjacency: true,
+                    roam: true,
+                    edgeSymbol: ['circle', 'arrow'],
+                    edgeSymbolSize: [4, 10],
+                    edgeLabel: {
+                        normal: {
+                            textStyle: {
+                                fontSize: 20
+                            }
+                        }
+                    },
+                    force: {
+                        repulsion: 500,  //调整初始node间的距离
+                        edgeLength: [10, 50]
+                    },
+                    draggable: true,
+                    itemStyle: {
+                        normal: {
+                            color: '#4b565b'
+                        }
+                    },
+                    lineStyle: {
+                        normal: {
+                            width: 2,
+                            color: '#4b565b'
+
+                        }
+                    },
+                    edgeLabel: {
+                        normal: {
+                            show: true,
+                            formatter: function (x) {
+                                return x.data.name;
+                            }
+                        }
+                    },
+                    label: {
+                        normal: {
+                            show: true,
+                            textStyle: {
+                            }
+                        }
+                    },
+                    data: [],
+					links: []
+                }
+            ]
+        };
+        myChart.setOption(option);
+        function tt1(){    
+            $.ajax({
+                cache: false,
+                type: "GET",
+				//type: "POST",
+                url: "/nodes", //把表单数据发送到/weather
+                data: null, // 发送的数据
+                dataType : "json",  //返回数据形式为json
+                async: false,
+                error: function(request) {
+                    alert("发送请求失败！");
+                },
+                success: function(result) {
+			    function fetchData(cb) {
+
+                    // 通过 setTimeout 模拟异步加载，读取数据
+                    setTimeout(function () {
+                    cb({
+                    new_name: document.getElementById("myint1").value,
+                    new_stride: document.getElementById("myint2").value
+                    });
+                    }, 100);   //1000为读取数据的延时
+                }
+				    
+                    //console.log(result);
+				fetchData(function (mes) {
+				    var datas = [];
+					var linking = [];
+					var flag1 = 0;
+					var flag2 = 0;
+					var count = 0;
+					var new_count = 1;
+					var i = 0;
+					datas[i++]={
+					name:mes.new_name,
+					itemStyle: {
+                                normal: {
+                                    color: 'red'
+                                }
+                            }
+					};
+					var j = 0;
+                    for (var h = 0; h < mes.new_stride; h++) {
+					    count = new_count;
+						len = datas.length;
+						new_count = 0;
+					    for (var k = 0; k < result.node1.length; k++) {
+						    flag1 = 0;
+					        flag2 = 0;
+						    for (var n = len-count; n < len; n++){
+							    if (result.node1[k] == datas[n].name)
+								{
+								    flag1 = 1;
+								}
+							}
+						    for (var m = 0; m < datas.length; m++) {
+							    if (result.node2[k] == datas[m].name)
+								{
+								    flag2 = 1;
+								}
+							}
+								
+							
+							if (flag1 && !flag2)
+                            {	
+                                new_count = new_count + 1;							
+                                datas[i++] = {
+								name: result.node2[k],
+								};
+								linking[j++] = {
+								source: result.node1[k],
+                                target: result.node2[k],
+                                name: result.relation[k],
+								};
+							}
+						}
+                    }
+					
+
+					myChart.setOption({
+					
+                    series: [
+                    {
+					data: datas,
+					links: linking
+						
+					}]
+						
+				    });
+				});
+                    
+                    
+                    // 为echarts对象加载数据-------------- 
+                }
+            });
+	    }
+    </script> 
+    <form>
+    请输入明星的名字：
+    <br>
+    <input type='text' id='myint1' value="范冰冰"/> 
+    <br>
+    请输入跳数：
+    <br>
+    <input type='text' id='myint2' value="2"/> 
+    <input type="button" value="确认" onclick="tt1()">
+    </form>	
+</body>
+</html>
